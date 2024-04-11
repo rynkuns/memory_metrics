@@ -60,4 +60,7 @@ class Metrics():
         else:
             raise Exception("TODO")
         
+    def scores(self):
+        pass
+        
 
