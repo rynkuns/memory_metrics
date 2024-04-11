@@ -60,7 +60,7 @@ class Metrics():
         else:
             raise Exception("TODO")
         
-    def scores(self):
+    def scores(self, which=["OpenAI", "TF-IDF"]):
         pass
         
 
