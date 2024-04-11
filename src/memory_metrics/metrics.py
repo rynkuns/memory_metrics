@@ -5,12 +5,12 @@ import numpy as np
 class Metrics():
 
     def __init__(self, target_text=None, texts=None) -> None:
-        if type(texts) not in [NoneType, list, dict]:
+        if type(texts) not in [type(None), list, dict]:
             raise Exception("Texts to compare must be provided either by list or dictionary of lists. TODO documentation")
         self.texts = texts
         self.texts_vecs = {}
         self.texts_scores = {}
-        if type(target_text) not in [NoneType, str, list]:
+        if type(target_text) not in [type(None), str, list]:
             raise Exception("Target text(s) must be provided either by string or list. TODO documentation")
         self.target_text = target_text
         # self.pairwise = False if type(target_text)==str else True if type(target_text)==list else None
