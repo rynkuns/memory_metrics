@@ -1,6 +1,5 @@
 from openai import OpenAI
 import numpy as np
-# from tqdm.notebook import tqdm
 
 
 def isnotebook():
@@ -56,32 +55,35 @@ class Metrics():
 
         
     def calculate_openai(self, progress_bar:bool=True):
-        # if not progress_bar:
-        #     XXXtqdm = lambda x: x
+        if not progress_bar:
+            local_tqdm = lambda x: x
+        elif progress_bar:
+            local_tqdm = tqdm
+            
         if type(self.target_text) == str:
             self.target_text_vecs["OpenAI"] = self.get_openai_embedding(self.target_text)
         elif type(self.target_text) == list:
-            self.target_text_vecs["OpenAI"] = [self.get_openai_embedding(txt) for txt in tqdm(self.target_text)]
+            self.target_text_vecs["OpenAI"] = [self.get_openai_embedding(txt) for txt in local_tqdm(self.target_text, desc="Creating target texts' embeddings")]
 
         if type(self.texts) == dict:
             self.texts_vecs["OpenAI"] = {}
             for key, value in self.texts.items():
-                self.texts_vecs["OpenAI"][key] = [self.get_openai_embedding(txt) for txt in tqdm(value)]
+                self.texts_vecs["OpenAI"][key] = [self.get_openai_embedding(txt) for txt in local_tqdm(value, desc="Creating comparison texts' embeddings")]
             ### Scores
             self.texts_scores["OpenAI"] = {}
-            for key, value in self.texts_vecs["OpenAI"]:
+            for key, value in self.texts_vecs["OpenAI"].items():
                 if type(self.target_text) == str:
-                    self.texts_scores["OpenAI"][key] = [self.__cos_similarity(self.target_text_vecs["OpenAI"], vec) for vec in tqdm(value)]
+                    self.texts_scores["OpenAI"][key] = [self.__cos_similarity(self.target_text_vecs["OpenAI"], vec) for vec in local_tqdm(value, desc="Creating comparison texts' scores")]
                 elif type(self.target_text) == list:
-                    self.texts_scores["OpenAI"][key] = [self.__cos_similarity(self.target_text_vecs["OpenAI"][i], value[i]) for i in tqdm(range(len(value)))]
+                    self.texts_scores["OpenAI"][key] = [self.__cos_similarity(self.target_text_vecs["OpenAI"][i], value[i]) for i in local_tqdm(range(len(value)), desc="Creating comparison texts' scores")]
 
         elif type(self.texts) == list:
-            self.texts_vecs["OpenAI"] = [self.get_openai_embedding(txt) for txt in self.texts]
+            self.texts_vecs["OpenAI"] = [self.get_openai_embedding(txt) for txt in local_tqdm(self.texts, desc="Creating comparison texts' embeddings")]
             ### Scores
             if type(self.target_text) == str:
-                self.texts_scores["OpenAI"] = [self.cos_similarity(self.target_text_vecs["OpenAI"], vec) for vec in tqdm(self.texts_vecs["OpenAI"])]
+                self.texts_scores["OpenAI"] = [self.cos_similarity(self.target_text_vecs["OpenAI"], vec) for vec in local_tqdm(self.texts_vecs["OpenAI"], desc="Creating comparison texts' scores")]
             elif type(self.target_text) == list:
-                self.texts_scores["OpenAI"] = [self.cos_similarity(self.target_text_vecs["OpenAI"][i], self.texts_vecs["OpenAI"][i]) for i in tqdm(range(len(self.texts_vecs["OpenAI"])))]
+                self.texts_scores["OpenAI"] = [self.cos_similarity(self.target_text_vecs["OpenAI"][i], self.texts_vecs["OpenAI"][i]) for i in local_tqdm(range(len(self.texts_vecs["OpenAI"])), desc="Creating comparison texts' scores")]
         
     def scores(self, which:list=None):
         possible = ["OpenAI", "TF-IDF"]
