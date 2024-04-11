@@ -2,22 +2,25 @@ from openai import OpenAI
 import numpy as np
 # from tqdm.notebook import tqdm
 
-# def isnotebook():
-#     try:
-#         shell = get_ipython().__class__.__name__
-#         if shell == 'ZMQInteractiveShell':
-#             return True   # Jupyter notebook or qtconsole
-#         elif shell == 'TerminalInteractiveShell':
-#             return False  # Terminal running IPython
-#         else:
-#             return False  # Other type (?)
-#     except NameError:
-#         return False      # Probably standard Python interpreter
 
-# if isnotebook():
-#     from tqdm.notebook import tqdm
-# else:
-#     from tqdm import tqdm
+def isnotebook():
+    # https://stackoverflow.com/questions/15411967/how-can-i-check-if-code-is-executed-in-the-ipython-notebook#39662359
+    try:
+        shell = get_ipython().__class__.__name__
+        if shell == 'ZMQInteractiveShell':
+            return True   # Jupyter notebook or qtconsole
+        elif shell == 'TerminalInteractiveShell':
+            return False  # Terminal running IPython
+        else:
+            return False  # Other type (?)
+    except NameError:
+        return False      # Probably standard Python interpreter
+    
+if isnotebook():
+    from tqdm.notebook import tqdm
+else:
+    from tqdm import tqdm
+
 
 
 class Metrics():
@@ -31,23 +34,10 @@ class Metrics():
         if openai_key != None:
             self.set_openai(openai_key)
 
-        def isnotebook():
-            # https://stackoverflow.com/questions/15411967/how-can-i-check-if-code-is-executed-in-the-ipython-notebook#39662359
-            try:
-                shell = get_ipython().__class__.__name__
-                if shell == 'ZMQInteractiveShell':
-                    return True   # Jupyter notebook or qtconsole
-                elif shell == 'TerminalInteractiveShell':
-                    return False  # Terminal running IPython
-                else:
-                    return False  # Other type (?)
-            except NameError:
-                return False      # Probably standard Python interpreter
-            
-        if isnotebook():
-            from tqdm.notebook import tqdm
-        else:
-            from tqdm import tqdm
+        # if isnotebook():
+        #     from tqdm.notebook import tqdm
+        # else:
+        #     from tqdm import tqdm
 
     def __cos_similarity(vec1, vec2):
         return np.dot(vec1, vec2)/(np.linalg.norm(vec1)*np.linalg.norm(vec2))
