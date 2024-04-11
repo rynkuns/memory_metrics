@@ -34,11 +34,6 @@ class Metrics():
         if openai_key != None:
             self.set_openai(openai_key)
 
-        # if isnotebook():
-        #     from tqdm.notebook import tqdm
-        # else:
-        #     from tqdm import tqdm
-
     def __cos_similarity(vec1, vec2):
         return np.dot(vec1, vec2)/(np.linalg.norm(vec1)*np.linalg.norm(vec2))
     
@@ -61,8 +56,8 @@ class Metrics():
 
         
     def calculate_openai(self, progress_bar:bool=True):
-        if not progress_bar:
-            tqdm = lambda x: x
+        # if not progress_bar:
+        #     tqdm = lambda x: x
         if type(self.target_text) == str:
             self.target_text_vecs["OpenAI"] = self.get_openai_embedding(self.target_text)
         elif type(self.target_text) == list:
