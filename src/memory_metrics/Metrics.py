@@ -18,10 +18,10 @@ def isnotebook():
     except NameError:
         return False      # Probably standard Python interpreter
     
-if isnotebook():
-    from tqdm.notebook import tqdm
-else:
-    from tqdm import tqdm
+# if isnotebook():
+#     from tqdm.notebook import tqdm
+# else:
+#     from tqdm import tqdm
 
 
 
@@ -35,6 +35,11 @@ class Metrics():
         
         if openai_key != None:
             self.set_openai(openai_key)
+
+        if isnotebook():
+            from tqdm.notebook import tqdm
+        else:
+            from tqdm import tqdm
 
     def __cos_similarity(vec1, vec2):
         return np.dot(vec1, vec2)/(np.linalg.norm(vec1)*np.linalg.norm(vec2))
