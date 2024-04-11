@@ -36,7 +36,7 @@ class Metrics():
         if openai_key != None:
             self.set_openai(openai_key)
 
-    def __cos_similarity(vec1, vec2):
+    def __cos_similarity(self, vec1, vec2):
         return np.dot(vec1, vec2)/(np.linalg.norm(vec1)*np.linalg.norm(vec2))
     
     def set_texts(self, target_text, texts):
