@@ -55,7 +55,7 @@ class Metrics():
             if type(self.target_text) == str:
                 self.texts_scores["OpenAI"] = [self.cos_similarity(self.target_text_vecs["OpenAI"], vec) for vec in self.texts_vecs["OpenAI"]]
             elif type(self.target_text) == list:
-                self.texts_scores["OpenAI"] = [self.cos_similarity(self.target_text_vecs["OpenAI"][i], vec[i]) for i in range(len(self.texts_vecs["OpenAI"]))]                
+                self.texts_scores["OpenAI"] = [self.cos_similarity(self.target_text_vecs["OpenAI"][i], self.texts_vecs["OpenAI"][i]) for i in range(len(self.texts_vecs["OpenAI"]))]                
 
         else:
             raise Exception("TODO")
