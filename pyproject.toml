@@ -5,3 +5,8 @@ build-backend = "hatchling.build"
 [project]
 name = "memory_metrics"
 version = "0.0.1"
+
+[tool.hatch.build.targets.sdist]
+include = [
+  "*"
+]
