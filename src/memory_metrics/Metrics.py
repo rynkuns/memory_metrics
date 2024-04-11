@@ -57,7 +57,7 @@ class Metrics():
         
     def calculate_openai(self, progress_bar:bool=True):
         # if not progress_bar:
-        #     tqdm = lambda x: x
+        #     XXXtqdm = lambda x: x
         if type(self.target_text) == str:
             self.target_text_vecs["OpenAI"] = self.get_openai_embedding(self.target_text)
         elif type(self.target_text) == list:
