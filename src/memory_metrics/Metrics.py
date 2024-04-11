@@ -5,22 +5,27 @@ import numpy as np
 class Metrics():
 
     def __init__(self, target_text=None, texts=None) -> None:
-        if type(texts) not in [type(None), list, dict]:
-            raise Exception("Texts to compare must be provided either by list or dictionary of lists. TODO documentation")
-        self.texts = texts
-        self.texts_vecs = {}
-        self.texts_scores = {}
-        if type(target_text) not in [type(None), str, list]:
-            raise Exception("Target text(s) must be provided either by string or list. TODO documentation")
-        self.target_text = target_text
-        # self.pairwise = False if type(target_text)==str else True if type(target_text)==list else None
-        self.target_text_vecs = {}
+        if (target_text != None) and (texts != None):
+            self.set_texts(target_text, texts)
+        elif (target_text == None) != (texts == None):
+            raise Exception("Both 'target_text' and 'texts' must be specified to assign them on object initialization.")
         
         # if openai_key != None:
         #     self.set_openai(openai_key)
 
-    def cos_similarity(vec1, vec2):
+    def __cos_similarity(vec1, vec2):
         return np.dot(vec1, vec2)/(np.linalg.norm(vec1)*np.linalg.norm(vec2))
+    
+    def set_texts(self, target_text, texts):
+        if type(texts) not in [list, dict]:
+            raise Exception("Texts to compare must be provided either by list or dictionary of lists. TODO documentation")
+        self.texts = texts
+        self.texts_vecs = {}
+        self.texts_scores = {}
+        if type(target_text) not in [str, list]:
+            raise Exception("Target text(s) must be provided either by string or list. TODO documentation")
+        self.target_text = target_text
+        self.target_text_vecs = {}
 
     def set_openai(self, key:str, model:str="text-embedding-3-small"):
         if type(key) is not str:
@@ -41,17 +46,19 @@ class Metrics():
                 self.texts_vecs["OpenAI"][key] = [self.get_openai_embedding(txt) for txt in value]
                 # for txt in value:
                 #     self.texts_vecs["OpenAI"][key].append(self.get_openai_embedding(txt))
+            ### Scores
             self.texts_scores["OpenAI"] = {}
             for key, value in self.texts_vecs["OpenAI"]:
                 if type(self.target_text) == str:
-                    self.texts_scores["OpenAI"][key] = [self.cos_similarity(self.target_text_vecs["OpenAI"], vec) for vec in value]
+                    self.texts_scores["OpenAI"][key] = [self.__cos_similarity(self.target_text_vecs["OpenAI"], vec) for vec in value]
                 elif type(self.target_text) == list:
-                    self.texts_scores["OpenAI"][key] = [self.cos_similarity(self.target_text_vecs["OpenAI"][i], value[i]) for i in range(len(value))]
+                    self.texts_scores["OpenAI"][key] = [self.__cos_similarity(self.target_text_vecs["OpenAI"][i], value[i]) for i in range(len(value))]
 
         elif type(self.texts) == list:
             self.texts_vecs["OpenAI"] = [self.get_openai_embedding(txt) for txt in self.texts]
             # for txt in self.texts:
             #     self.texts_vecs["OpenAI"].append(self.get_openai_embedding(txt))
+            ### Scores
             if type(self.target_text) == str:
                 self.texts_scores["OpenAI"] = [self.cos_similarity(self.target_text_vecs["OpenAI"], vec) for vec in self.texts_vecs["OpenAI"]]
             elif type(self.target_text) == list:
@@ -60,7 +67,11 @@ class Metrics():
         else:
             raise Exception("TODO")
         
-    def scores(self, which=["OpenAI", "TF-IDF"]):
-        pass
-        
-
+    def scores(self, which:list=None):
+        possible = ["OpenAI", "TF-IDF"]
+        if which == None:
+            return self.texts_scores
+        elif which < possible:
+            return {k: v for k, v in self.texts_scores.items() if k in which}
+        else:
+            raise Exception(f"Unexpected keys for scores dictionary in 'which'. 'which' must be a subset of {possible}.")
