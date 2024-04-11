@@ -1,6 +1,6 @@
 from openai import OpenAI
 import numpy as np
-import tqdm
+from tqdm import tqdm
 
 
 class Metrics():
