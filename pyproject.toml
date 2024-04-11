@@ -5,3 +5,8 @@ build-backend = "hatchling.build"
 [project]
 name = "memory_metrics"
 version = "0.0.1"
+dependencies = [
+    "openai~=1.17.0",
+    "numpy~=1.19.5",
+    "tqdm~=4.66.2"
+]
