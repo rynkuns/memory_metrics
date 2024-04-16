@@ -35,7 +35,7 @@ else:
 
 class Metrics():
 
-    def __init__(self, target_text=None, texts=None, openai_key:str=None) -> None:
+    def __init__(self, target_text:str|list=None, texts:list|dict=None, openai_key:str=None) -> None:
         if (target_text != None) and (texts != None):
             self.set_texts(target_text, texts)
         elif (target_text == None) != (texts == None):
@@ -49,20 +49,31 @@ class Metrics():
     def __cos_similarity(self, vec1, vec2):
         return np.dot(vec1, vec2)/(np.linalg.norm(vec1)*np.linalg.norm(vec2))
     
-    def set_texts(self, target_text, texts):
+    def set_texts(self, target_text:str|list, texts:list|dict):
+        """Set the texts for which metrics will be calculated.
+
+        Args:
+            target_text (str | list): The target / standard text for comparison in form of either a single string, or a list of strings for pairwise comparison.
+            texts (list | dict): A list of texts to compare, or a dict of lists of texts; if 'target' arg is a list, then each of the lists in 'texts' must be of the same lenght as in 'target'.
+
+        Raises:
+            Exception: TODO
+            Exception: TODO
+        """
+
         if type(texts) not in [list, dict]:
-            raise Exception("Texts to compare must be provided either by list or dictionary of lists. TODO documentation")
+            raise TypeError("Texts to compare must be provided either by list or dictionary of lists.")
         self.texts = texts
         self.texts_vecs = {}
         self.texts_scores = {}
         if type(target_text) not in [str, list]:
-            raise Exception("Target text(s) must be provided either by string or list. TODO documentation")
+            raise TypeError("Target text(s) must be provided either by string or list.")
         self.target_text = target_text
         self.target_text_vecs = {}
 
     def set_openai(self, key:str, model:str="text-embedding-3-small"):
         if type(key) is not str:
-            raise Exception("OpenAI key must be a string.")
+            raise TypeError("OpenAI key must be a string.")
         self.openai_client = OpenAI(api_key = key)
         self.openai_model = model
 
@@ -150,7 +161,7 @@ class Metrics():
                 self.texts_scores["TF-IDF"] = [tfidf_similarity(self.target_text_vecs["TF-IDF"], vec) for vec in local_tqdm(self.texts_vecs["TF-IDF"])]#, desc="Creating comparison texts' scores")]
             elif type(self.target_text) == list:
                 self.texts_scores["TF-IDF"] = [tfidf_similarity(self.target_text_vecs["TF-IDF"][i], self.texts_vecs["TF-IDF"][i]) for i in local_tqdm(range(len(self.texts_vecs["TF-IDF"])))]#, desc="Creating comparison texts' scores")]
-    
+
     def which_calculated(self):
         return self.texts_scores.keys()
         
@@ -158,8 +169,8 @@ class Metrics():
         possible = ["OpenAI", "TF-IDF"]
         if which == None:
             return self.texts_scores
-        elif which < possible:
+        elif which <= possible:
             return {k: v for k, v in self.texts_scores.items() if k in which}
         else:
-            raise Exception(f"Unexpected keys in 'which'. 'which' must be a subset of {possible}.")
+            raise Exception(f"Unexpected keys in 'which' arg. 'which' must be a subset of {possible}.")
 
