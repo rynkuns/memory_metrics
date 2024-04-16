@@ -34,6 +34,7 @@ else:
 
 
 class Metrics():
+    
 
     def __init__(self, target_text:str|list=None, texts:list|dict=None, openai_key:str=None) -> None:
         if (target_text != None) and (texts != None):
@@ -72,6 +73,15 @@ class Metrics():
         self.target_text_vecs = {}
 
     def set_openai(self, key:str, model:str="text-embedding-3-small"):
+        """_summary_
+
+        Args:
+            key (str): Your private key for OpenAI API. Keep this value secret.
+            model (str, optional): A string representing which OpenAI embedding model will be used. Defaults to "text-embedding-3-small".
+
+        Raises:
+            TypeError: TODO
+        """
         if type(key) is not str:
             raise TypeError("OpenAI key must be a string.")
         self.openai_client = OpenAI(api_key = key)
@@ -165,7 +175,15 @@ class Metrics():
     def which_calculated(self):
         return self.texts_scores.keys()
         
-    def scores(self, which:list=None):
+    def scores(self, which:list=None) -> dict:
+        """Return the calculated metrics.
+
+        Args:
+            which (list, optional): List os strings, which selects which kmind of metrics will be return (all by default). Defaults to None.
+
+        Returns:
+            dict: Dictionary with metrics, where keys are strings representing the type of a metric. 
+        """
         possible = ["OpenAI", "TF-IDF"]
         if which == None:
             return self.texts_scores
