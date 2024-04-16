@@ -1,5 +1,13 @@
-from openai import OpenAI
 import numpy as np
+
+from openai import OpenAI
+
+### TF-IDF relevant imports
+import nltk
+from nltk.tokenize import word_tokenize
+from nltk.corpus import stopwords
+from nltk.stem import WordNetLemmatizer
+from sklearn.feature_extraction.text import TfidfVectorizer
 
 
 def isnotebook():
@@ -32,6 +40,8 @@ class Metrics():
             self.set_texts(target_text, texts)
         elif (target_text == None) != (texts == None):
             raise Exception("Both 'target_text' and 'texts' must be specified to assign them on object initialization.")
+        else:
+            self.texts_scores = {}
         
         if openai_key != None:
             self.set_openai(openai_key)
@@ -54,24 +64,26 @@ class Metrics():
         if type(key) is not str:
             raise Exception("OpenAI key must be a string.")
         self.openai_client = OpenAI(api_key = key)
-        self.get_openai_embedding = lambda text: self.openai_client.embeddings.create(input = [text], model=model).data[0].embedding
+        self.openai_model = model
 
         
     def calculate_openai(self, progress_bar:bool=True):
+        get_openai_embedding = lambda text: self.openai_client.embeddings.create(input = [text], model=self.openai_model).data[0].embedding
+
         if not progress_bar:
             local_tqdm = lambda x: x
         elif progress_bar:
             local_tqdm = tqdm
             
         if type(self.target_text) == str:
-            self.target_text_vecs["OpenAI"] = self.get_openai_embedding(self.target_text)
+            self.target_text_vecs["OpenAI"] = get_openai_embedding(self.target_text)
         elif type(self.target_text) == list:
-            self.target_text_vecs["OpenAI"] = [self.get_openai_embedding(txt) for txt in local_tqdm(self.target_text)]#, desc="Creating target texts' embeddings")]
+            self.target_text_vecs["OpenAI"] = [get_openai_embedding(txt) for txt in local_tqdm(self.target_text)]#, desc="Creating target texts' embeddings")]
 
         if type(self.texts) == dict:
             self.texts_vecs["OpenAI"] = {}
             for key, value in self.texts.items():
-                self.texts_vecs["OpenAI"][key] = [self.get_openai_embedding(txt) for txt in local_tqdm(value)]#, desc="Creating comparison texts' embeddings")]
+                self.texts_vecs["OpenAI"][key] = [get_openai_embedding(txt) for txt in local_tqdm(value)]#, desc="Creating comparison texts' embeddings")]
             ### Scores
             self.texts_scores["OpenAI"] = {}
             for key, value in self.texts_vecs["OpenAI"].items():
@@ -81,12 +93,66 @@ class Metrics():
                     self.texts_scores["OpenAI"][key] = [self.__cos_similarity(self.target_text_vecs["OpenAI"][i], value[i]) for i in local_tqdm(range(len(value)))]#, desc="Creating comparison texts' scores")]
 
         elif type(self.texts) == list:
-            self.texts_vecs["OpenAI"] = [self.get_openai_embedding(txt) for txt in local_tqdm(self.texts)]#, desc="Creating comparison texts' embeddings")]
+            self.texts_vecs["OpenAI"] = [get_openai_embedding(txt) for txt in local_tqdm(self.texts)]#, desc="Creating comparison texts' embeddings")]
             ### Scores
             if type(self.target_text) == str:
                 self.texts_scores["OpenAI"] = [self.cos_similarity(self.target_text_vecs["OpenAI"], vec) for vec in local_tqdm(self.texts_vecs["OpenAI"])]#, desc="Creating comparison texts' scores")]
             elif type(self.target_text) == list:
                 self.texts_scores["OpenAI"] = [self.cos_similarity(self.target_text_vecs["OpenAI"][i], self.texts_vecs["OpenAI"][i]) for i in local_tqdm(range(len(self.texts_vecs["OpenAI"])))]#, desc="Creating comparison texts' scores")]
+
+    def calculate_tfidf(self, progress_bar:bool=True, lang:str="english"):
+        nltk.download('stopwords')
+        nltk.download('wordnet')
+        stop_words = stopwords.words(lang)
+        lemmatizer = WordNetLemmatizer()
+
+        def prepare_tokens(text):
+            tokens = word_tokenize(text)
+            tokens = [token for token in tokens if token not in stop_words]
+            tokens = [lemmatizer.lemmatize(token) for token in tokens]
+            # tokens = [token for token in tokens if token not in stop_words] ### potentialy useful?
+            return tokens
+        
+        def tfidf_similarity(tokens1, tokens2):
+            vectorizer = TfidfVectorizer()
+            corpus = [" ".join(text) for text in [tokens1,tokens2]]
+            matrix_tfidf = vectorizer.fit_transform(corpus).todense()
+            vec1, vec2 = [np.squeeze(np.asarray(matrix_tfidf[i,:])) for i in range(2)]
+            similarity = self.__cos_similarity(vec1, vec2)
+            return similarity
+
+        if not progress_bar:
+            local_tqdm = lambda x: x
+        elif progress_bar:
+            local_tqdm = tqdm
+
+        if type(self.target_text) == str:
+            self.target_text_vecs["TF-IDF"] = prepare_tokens(self.target_text)
+        elif type(self.target_text) == list:
+            self.target_text_vecs["TF-IDF"] = [prepare_tokens(txt) for txt in local_tqdm(self.target_text)]#, desc="Creating target texts' embeddings")]
+
+        if type(self.texts) == dict:
+            self.texts_vecs["TF-IDF"] = {}
+            for key, value in self.texts.items():
+                self.texts_vecs["TF-IDF"][key] = [prepare_tokens(txt) for txt in local_tqdm(value)]#, desc="Creating comparison texts' embeddings")]
+            ### Scores
+            self.texts_scores["TF-IDF"] = {}
+            for key, value in self.texts_vecs["TF-IDF"].items():
+                if type(self.target_text) == str:
+                    self.texts_scores["TF-IDF"][key] = [tfidf_similarity(self.target_text_vecs["TF-IDF"], vec) for vec in local_tqdm(value)]#, desc="Creating comparison texts' scores")]
+                elif type(self.target_text) == list:
+                    self.texts_scores["TF-IDF"][key] = [tfidf_similarity(self.target_text_vecs["TF-IDF"][i], value[i]) for i in local_tqdm(range(len(value)))]#, desc="Creating comparison texts' scores")]
+
+        elif type(self.texts) == list:
+            self.texts_vecs["TF-IDF"] = [prepare_tokens(txt) for txt in local_tqdm(self.texts)]#, desc="Creating comparison texts' embeddings")]
+            ### Scores
+            if type(self.target_text) == str:
+                self.texts_scores["TF-IDF"] = [tfidf_similarity(self.target_text_vecs["TF-IDF"], vec) for vec in local_tqdm(self.texts_vecs["TF-IDF"])]#, desc="Creating comparison texts' scores")]
+            elif type(self.target_text) == list:
+                self.texts_scores["TF-IDF"] = [tfidf_similarity(self.target_text_vecs["TF-IDF"][i], self.texts_vecs["TF-IDF"][i]) for i in local_tqdm(range(len(self.texts_vecs["TF-IDF"])))]#, desc="Creating comparison texts' scores")]
+    
+    def which_calculated(self):
+        return self.texts_scores.keys()
         
     def scores(self, which:list=None):
         possible = ["OpenAI", "TF-IDF"]
@@ -96,3 +162,4 @@ class Metrics():
             return {k: v for k, v in self.texts_scores.items() if k in which}
         else:
             raise Exception(f"Unexpected keys in 'which'. 'which' must be a subset of {possible}.")
+
