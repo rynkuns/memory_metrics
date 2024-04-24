@@ -1,2 +1,2 @@
-from memory_metrics.metrics import Metrics
+from memory_metrics import Metrics
 
