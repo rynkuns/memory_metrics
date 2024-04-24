@@ -1,4 +1,4 @@
-from memory_metrics.metrics import Metrics
+from metrics import Metrics
 
 import importlib.metadata
 
