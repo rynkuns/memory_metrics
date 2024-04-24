@@ -9,6 +9,9 @@ from nltk.corpus import stopwords
 from nltk.stem import WordNetLemmatizer
 from sklearn.feature_extraction.text import TfidfVectorizer
 
+# from bert_score import score as bertscore
+import bert_score
+
 
 def isnotebook():
     # https://stackoverflow.com/questions/15411967/how-can-i-check-if-code-is-executed-in-the-ipython-notebook#39662359
@@ -171,6 +174,26 @@ class Metrics():
                 self.texts_scores["TF-IDF"] = [tfidf_similarity(self.target_text_vecs["TF-IDF"], vec) for vec in local_tqdm(self.texts_vecs["TF-IDF"])]#, desc="Creating comparison texts' scores")]
             elif type(self.target_text) == list:
                 self.texts_scores["TF-IDF"] = [tfidf_similarity(self.target_text_vecs["TF-IDF"][i], self.texts_vecs["TF-IDF"][i]) for i in local_tqdm(range(len(self.texts_vecs["TF-IDF"])))]#, desc="Creating comparison texts' scores")]
+
+    def calculate_bertscore(self, model="microsoft/deberta-xlarge-mnli", verbose=False):
+        if type(self.target_text) == str:
+            if type(self.texts) == dict:
+                target = [self.target_text] * len(self.texts.items[0][1])
+            elif type(self.texts) == list:
+                target = [self.target_text] * len(self.texts)
+        elif type(self.target_text) == list:
+            target = self.target_text
+
+        ### Scores
+        if type(self.texts) == dict:
+            self.texts_scores["BERTScore"] = {}
+            for key, value in self.texts.items():
+                P, R, F1 = bert_score.score(value, target, model_type=model, verbose=verbose)
+                self.texts_scores["BERTScore"][key] = F1
+
+        elif type(self.texts) == list:
+            P, R, F1 = bert_score.score(self.texts, target, model_type=model, verbose=verbose)
+            self.texts_scores["BERTScore"] = F1
 
     def which_calculated(self):
         return self.texts_scores.keys()

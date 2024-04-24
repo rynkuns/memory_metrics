@@ -2,3 +2,4 @@ nltk==3.8.1
 numpy==1.19.5
 openai==1.17.0
 tqdm==4.66.2
+bert_score==0.3.13
