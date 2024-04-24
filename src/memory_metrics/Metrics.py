@@ -50,9 +50,11 @@ class Metrics():
         if openai_key != None:
             self.set_openai(openai_key)
 
+
     def __cos_similarity(self, vec1, vec2):
         return np.dot(vec1, vec2)/(np.linalg.norm(vec1)*np.linalg.norm(vec2))
-    
+
+
     def set_texts(self, target_text:str|list, texts:list|dict):
         """Set the texts for which metrics will be calculated.
 
@@ -74,6 +76,7 @@ class Metrics():
             raise TypeError("Target text(s) must be provided either by string or list.")
         self.target_text = target_text
         self.target_text_vecs = {}
+
 
     def set_openai(self, key:str, model:str="text-embedding-3-small"):
         """_summary_
@@ -123,6 +126,7 @@ class Metrics():
                 self.texts_scores["OpenAI"] = [self.cos_similarity(self.target_text_vecs["OpenAI"], vec) for vec in local_tqdm(self.texts_vecs["OpenAI"])]#, desc="Creating comparison texts' scores")]
             elif type(self.target_text) == list:
                 self.texts_scores["OpenAI"] = [self.cos_similarity(self.target_text_vecs["OpenAI"][i], self.texts_vecs["OpenAI"][i]) for i in local_tqdm(range(len(self.texts_vecs["OpenAI"])))]#, desc="Creating comparison texts' scores")]
+
 
     def calculate_tfidf(self, progress_bar:bool=True, lang:str="english"):
         nltk.download('stopwords')
@@ -175,6 +179,7 @@ class Metrics():
             elif type(self.target_text) == list:
                 self.texts_scores["TF-IDF"] = [tfidf_similarity(self.target_text_vecs["TF-IDF"][i], self.texts_vecs["TF-IDF"][i]) for i in local_tqdm(range(len(self.texts_vecs["TF-IDF"])))]#, desc="Creating comparison texts' scores")]
 
+
     def calculate_bertscore(self, model="microsoft/deberta-xlarge-mnli", verbose=False):
         if type(self.target_text) == str:
             if type(self.texts) == dict:
@@ -195,8 +200,10 @@ class Metrics():
             P, R, F1 = bert_score.score(self.texts, target, model_type=model, verbose=verbose)
             self.texts_scores["BERTScore"] = F1
 
+
     def which_calculated(self):
         return self.texts_scores.keys()
+        
         
     def scores(self, which:list=None) -> dict:
         """Return the calculated metrics.
