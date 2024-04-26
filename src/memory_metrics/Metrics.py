@@ -51,8 +51,17 @@ class Metrics():
             self.set_openai(openai_key)
 
 
-    def __cos_similarity(self, vec1, vec2):
-        return np.dot(vec1, vec2)/(np.linalg.norm(vec1)*np.linalg.norm(vec2))
+    def __cos_similarity(self, X, Y):
+        if type(X) == list:
+            X = np.array(X)
+        if type(Y) == list:
+            Y = np.array(Y)
+        if X.ndim == Y.ndim == 1:
+            return np.dot(X, Y)/(np.linalg.norm(X)*np.linalg.norm(Y))
+        elif X.ndim == Y.ndim == 2:
+            return list((X * Y).sum(axis=1) / np.linalg.norm(X, axis=1) / np.linalg.norm(Y, axis=1))
+        else:
+            raise Exception("__cos_similarity takes two arrays with 1 or 2 dimensions.")
 
 
     def set_texts(self, target_text:str|list, texts:list|dict):
@@ -67,7 +76,11 @@ class Metrics():
             Exception: TODO
         """
 
-        if type(texts) not in [list, dict]:
+        if type(texts) == list:
+            self.series_len = len(texts)
+        elif type(texts) == dict:
+            self.series_len = len(texts.items[0][1])
+        else:
             raise TypeError("Texts to compare must be provided either by list or dictionary of lists.")
         self.texts = texts
         self.texts_vecs = {}
@@ -117,15 +130,17 @@ class Metrics():
                 if type(self.target_text) == str:
                     self.texts_scores["OpenAI"][key] = [self.__cos_similarity(self.target_text_vecs["OpenAI"], vec) for vec in local_tqdm(value)]#, desc="Creating comparison texts' scores")]
                 elif type(self.target_text) == list:
-                    self.texts_scores["OpenAI"][key] = [self.__cos_similarity(self.target_text_vecs["OpenAI"][i], value[i]) for i in local_tqdm(range(len(value)))]#, desc="Creating comparison texts' scores")]
+                    ### old # self.texts_scores["OpenAI"][key] = [self.__cos_similarity(self.target_text_vecs["OpenAI"][i], value[i]) for i in local_tqdm(range(len(value)))]#, desc="Creating comparison texts' scores")]
+                    self.texts_scores["OpenAI"][key] = self.__cos_similarity(self.target_text_vecs["OpenAI"], value)
 
         elif type(self.texts) == list:
             self.texts_vecs["OpenAI"] = [get_openai_embedding(txt) for txt in local_tqdm(self.texts)]#, desc="Creating comparison texts' embeddings")]
             ### Scores
             if type(self.target_text) == str:
-                self.texts_scores["OpenAI"] = [self.cos_similarity(self.target_text_vecs["OpenAI"], vec) for vec in local_tqdm(self.texts_vecs["OpenAI"])]#, desc="Creating comparison texts' scores")]
+                self.texts_scores["OpenAI"] = [self.__cos_similarity(self.target_text_vecs["OpenAI"], vec) for vec in local_tqdm(self.texts_vecs["OpenAI"])]#, desc="Creating comparison texts' scores")]
             elif type(self.target_text) == list:
-                self.texts_scores["OpenAI"] = [self.cos_similarity(self.target_text_vecs["OpenAI"][i], self.texts_vecs["OpenAI"][i]) for i in local_tqdm(range(len(self.texts_vecs["OpenAI"])))]#, desc="Creating comparison texts' scores")]
+                self.texts_scores["OpenAI"] = self.__cos_similarity(self.target_text_vecs["OpenAI"], self.texts_vecs["OpenAI"])
+                ### old # self.texts_scores["OpenAI"] = [self.__cos_similarity(self.target_text_vecs["OpenAI"][i], self.texts_vecs["OpenA   I"][i]) for i in local_tqdm(range(len(self.texts_vecs["OpenAI"])))]#, desc="Creating comparison texts' scores")]
 
 
     def calculate_tfidf(self, progress_bar:bool=True, lang:str="english"):
@@ -183,9 +198,9 @@ class Metrics():
     def calculate_bertscore(self, model="microsoft/deberta-xlarge-mnli", verbose=False):
         if type(self.target_text) == str:
             if type(self.texts) == dict:
-                target = [self.target_text] * len(self.texts.items[0][1])
+                target = [self.target_text] * self.series_len
             elif type(self.texts) == list:
-                target = [self.target_text] * len(self.texts)
+                target = [self.target_text] * self.series_len
         elif type(self.target_text) == list:
             target = self.target_text
 
