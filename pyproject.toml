@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "memory_metrics"
-version = "0.0.1.dev26"
+version = "0.0.1.dev27"
 dependencies = [
     "nltk~=3.8.1",
     "openai~=1.17.0",
